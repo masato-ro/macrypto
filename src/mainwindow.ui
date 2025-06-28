@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QWidget" name="MainWindow">
+  <property name="windowTitle">
+   <string>AES Encrypt/Decrypt Tool</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QFormLayout" name="formLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_mode">
+       <property name="text">
+        <string>Mode:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="comboBox_mode">
+       <item><property name="text"><string>Encrypt</string></property></item>
+       <item><property name="text"><string>Decrypt</string></property></item>
+      </widget>
+     </item>
+
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_input">
+       <property name="text"><string>Input File:</string></property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <layout class="QHBoxLayout" name="inputFileLayout">
+       <item><widget class="QLineEdit" name="lineEdit_input"/></item>
+       <item><widget class="QPushButton" name="pushButton_browseInput"><property name="text"><string>Browse...</string></property></widget></item>
+      </layout>
+     </item>
+
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_output">
+       <property name="text"><string>Output File:</string></property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <layout class="QHBoxLayout" name="outputFileLayout">
+       <item><widget class="QLineEdit" name="lineEdit_output"/></item>
+       <item><widget class="QPushButton" name="pushButton_browseOutput"><property name="text"><string>Browse...</string></property></widget></item>
+      </layout>
+     </item>
+
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_password">
+       <property name="text"><string>Password:</string></property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="lineEdit_password">
+       <property name="echoMode"><enum>QLineEdit::Password</enum></property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <item>
+    <widget class="QPushButton" name="pushButton_start">
+     <property name="text"><string>Start</string></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTextEdit" name="textEdit_log">
+     <property name="readOnly"><bool>true</bool></property>
+     <property name="placeholderText"><string>Status messages will appear here...</string></property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

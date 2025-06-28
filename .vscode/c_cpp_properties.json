@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/include/qt6/QtCore",
+                "/usr/include/qt6",
+                "/usr/include/qt6/QtWidgets"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/lib/llvm/19/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}
