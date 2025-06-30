@@ -44,9 +44,9 @@ aescrypt_gui.exe encrypt <input> <output> <password>
 aescrypt_gui.exe decrypt <input> <output> [password]
 ```
 
-- <input>: input file path
-- <output>: output file path
-- <password>: required for AES encryption/decryption; optional for GPG decryption (omit to use pinentry)
+- `<input>`: input file path
+- `<output>`: output file path
+- `<password>`: required for AES encryption/decryption; optional for GPG decryption (omit to use pinentry)
 
 Examples:
 
