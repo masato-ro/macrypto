@@ -1,0 +1,4 @@
+# 忽略 OpenSSL 或其他外部庫資料夾的語言統計
+include/openssl/* linguist-vendored
+gpg/**/*        linguist-vendored
+openssl/**/*    linguist-vendored
