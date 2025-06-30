@@ -1,53 +1,74 @@
-# macrypto
+# Macrypt
 
-**macrypto** is a lightweight, cross-platform cryptographic toolkit written in C.  
-It supports macOS, Linux, and Windows, and provides essential cryptographic utilities such as AES encryption, Base64 encoding, and random number generation.
+**Macrypt** is a modern cross-platform GUI and CLI tool for secure file encryption and decryption.  
+It supports **AES-256-CBC** and **GPG (GnuPG)** encryption methods, offering both graphical and command-line interfaces.
 
 ## ✨ Features
 
-- 🔐 AES-128/256 encryption and decryption
-- 🧮 Base64 encode/decode
-- 🎲 Secure random number generation
-- ⚙️ Command-line utility and library usage
-- 💻 Cross-platform: macOS, Linux, Windows
+- 🔐 AES-256 encryption and decryption (using OpenSSL)
+- 📄 GPG encryption and decryption (via bundled GnuPG executable)
+- 🧮 SHA and MD5 hashing utility
+- 📦 GUI built with Qt 6 (cross-platform)
+- ⚙️ Lightweight CLI and GUI versions available
+- 💻 Runs on Windows, macOS, and Linux
 
-## 📦 Build
+## 🖼 GUI Version
 
-### On Linux/macOS
+The GUI version of Macrypt allows drag-and-drop file selection, progress tracking, and log output.  
+It includes dedicated tabs for AES, GPG, and hashing utilities.
+
+## 🔧 Build Instructions
+
+### Linux / macOS
 
 ```bash
+qmake
 make
 ```
 
-### On Windows (MinGW)
+### Windows (MSVC)
 
-```bash
-make -f Makefile.win
+```cmd
+qmake -tp vc
+nmake
 ```
 
-> Or use Visual Studio project if provided.
+Or open the `aescrypt_gui.pro` project file in **Qt Creator**.
 
-## 🚀 Usage
+## 🚀 CLI Usage
 
-Command-line example:
+AES encryption from command-line:
 
 ```bash
-./macrypto aes -e -k mykey.txt -i input.txt -o output.enc
+./macrypt aes -e -k mykey.txt -i input.txt -o output.enc
 ```
 
-Library example (C):
+Library usage in C:
 
 ```c
-#include "macrypto.h"
+#include "aescrypt.h"
 
-macrypto_aes_encrypt(...);
+encrypt_file("input.txt", "output.enc", "your-password");
 ```
+
+## 📦 Dependencies
+
+- Qt 6.x
+- OpenSSL 3.x
+- GPG executable (bundled for portability)
 
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
 
-## 🙋 Author
+Bundled libraries:
+
+- **OpenSSL**: Apache License 2.0
+- **Qt**: LGPL
+- **GnuPG**: GPL-3.0-or-later
+- **libgcrypt**: LGPL-2.1-or-later
+
+## 👤 Author
 
 Developed by **Masato Ro**  
 GitHub: [@masato-ro](https://github.com/masato-ro)
