@@ -45,7 +45,7 @@
      <enum>QTabWidget::TabShape::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <property name="tabsClosable">
      <bool>false</bool>
@@ -417,7 +417,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <x>10</x>
         <y>10</y>
         <width>401</width>
-        <height>91</height>
+        <height>71</height>
        </rect>
       </property>
       <layout class="QFormLayout" name="formLayout_2">
@@ -466,20 +466,6 @@ li.checked::marker { content: &quot;\2612&quot;; }
           </widget>
          </item>
         </layout>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_password_2">
-         <property name="text">
-          <string>Password:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="lineEditGPG_password">
-         <property name="echoMode">
-          <enum>QLineEdit::EchoMode::Password</enum>
-         </property>
-        </widget>
        </item>
       </layout>
      </widget>

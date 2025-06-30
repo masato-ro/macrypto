@@ -155,13 +155,11 @@ void MainWindow::on_pushButtonGPG_browseOutput_clicked() {
 void MainWindow::on_pushButton_decryptGPG_clicked() {
     QString input = ui->lineEditGPG_input->text();
     QString output = ui->lineEditGPG_output->text();
-    QString password = ui->lineEditGPG_password->text();
-
     ui->textEditGPG_log->clear();
     ui->progressBarGPG->setValue(0);
 
-    if (input.isEmpty() || output.isEmpty() || password.isEmpty()) {
-        ui->textEditGPG_log->append("❗請填入所有欄位！");
+    if (input.isEmpty() || output.isEmpty()) {
+        ui->textEditGPG_log->append("❗請填入輸入與輸出路徑！");
         return;
     }
 
@@ -175,14 +173,12 @@ void MainWindow::on_pushButton_decryptGPG_clicked() {
     // 建立 QProcess 執行 gpg
     QProcess *gpgProc = new QProcess(this);
     QStringList args = {
-        "--batch",
         "--yes",
-        "--passphrase", password,
         "-o", output,
         "-d", input
     };
 
-    ui->textEditGPG_log->append("🔐 開始解密中...");
+    ui->textEditGPG_log->append("🔐 開始解密中，請等待pinentry window...");
     ui->progressBarGPG->setRange(0, 0); // 不確定進度
 
     connect(gpgProc, &QProcess::readyReadStandardOutput, this, [=]() {
@@ -202,6 +198,9 @@ void MainWindow::on_pushButton_decryptGPG_clicked() {
 
             if (exitCode == 0 && status == QProcess::NormalExit) {
                 ui->textEditGPG_log->append("✅ 解密成功！");
+                QString agentPath = QCoreApplication::applicationDirPath() + "/gpg/bin/gpg-connect-agent.exe";
+                QProcess::startDetached(agentPath, QStringList() << "reloadagent" << "/bye");
+                ui->textEditGPG_log->append("🔒 已清除 GPG 密碼快取（下次會重新要求輸入）。");
             } else {
                 ui->textEditGPG_log->append("❌ 解密失敗！");
             }

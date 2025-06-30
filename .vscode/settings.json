@@ -5,7 +5,8 @@
         "qfiledialog": "cpp",
         "new": "cpp",
         "qapplication": "cpp",
-        "qfile": "cpp"
+        "qfile": "cpp",
+        "string": "cpp"
     },
     "cmake.ignoreCMakeListsMissing": true
 }

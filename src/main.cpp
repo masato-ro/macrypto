@@ -10,47 +10,41 @@
 #include "aescrypt.h"
 #include "mainwindow.h"
 
-// 用 GPGME 用密碼解密
-bool decryptGPGWithPassphrase(const QString &inFile, const QString &outFile, const QString &password)
+bool decryptGPG(const QString &inFile, const QString &outFile)
 {
-    // 輸入檔案存在檢查
     if (!QFile::exists(inFile)) {
         qWarning() << "Input file does not exist:" << inFile;
         return false;
     }
 
-    // 準備 gpg.exe 參數
+    QString gpgPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/gpg/bin/gpg.exe");
+
     QStringList args;
-    args << "--batch"      // 不互動
-         << "--yes"        // 自動覆寫輸出檔
-         << "--passphrase" << password
+    args << "--yes"
          << "-o" << outFile
          << "-d" << inFile;
 
     QProcess gpg;
-    gpg.start("./gpg/bin/gpg.exe", args);
+    gpg.start(gpgPath, args);
 
-    if (!gpg.waitForFinished(15000)) {  // 等待最多 15 秒
-        qWarning() << "gpg process timeout or failed to start";
+    if (!gpg.waitForFinished(-1)) {
+        qWarning() << "gpg process timeout or failed";
         return false;
     }
 
-    // 讀錯誤輸出，檢查是否有錯誤訊息
     QByteArray stderrOutput = gpg.readAllStandardError();
     if (!stderrOutput.isEmpty()) {
         qWarning() << "gpg error output:" << stderrOutput;
     }
 
-    // 檢查 gpg 執行結果
     if (gpg.exitCode() != 0) {
-        qWarning() << "gpg process exited with code" << gpg.exitCode();
+        qWarning() << "gpg exited with code" << gpg.exitCode();
         return false;
     }
 
-    // 輸出檔案是否產生及大小檢查
     QFile outFileObj(outFile);
     if (!outFileObj.exists() || outFileObj.size() == 0) {
-        qWarning() << "Output file not created or empty:" << outFile;
+        qWarning() << "Output file missing or empty:" << outFile;
         return false;
     }
 
@@ -131,16 +125,15 @@ int main(int argc, char *argv[])
         return app.exec();
     }
 
-    if (args.size() != 4) {
+    if (args.size() < 3) {
         qCritical() << "Usage:\n  " << argv[0]
-                    << " <encrypt|decrypt> <input> <output> <password>";
+                    << " <encrypt|decrypt> <input> <output> [password]";
         return 1;
     }
-
     QString mode = args[0];
     QString inputFile = args[1];
     QString outputFile = args[2];
-    QString password = args[3];
+    QString password = (args.size() > 3) ? args[3] : QString();
 
     AESCrypt crypt;
     bool success = false;
@@ -149,17 +142,13 @@ int main(int argc, char *argv[])
         success = crypt.encryptFile(inputFile, outputFile, password);
     } else if (mode == "decrypt") {
         if (inputFile.endsWith(".gpg", Qt::CaseInsensitive)) {
-            success = decryptGPGWithPassphrase(inputFile, outputFile, password);
+            // 不直接傳密碼，改為 GPG 自行呼叫 pinentry
+            success = decryptGPG(inputFile, outputFile);
         } else {
             success = crypt.decryptFile(inputFile, outputFile, password);
         }
     } else {
         qCritical() << "Mode must be 'encrypt' or 'decrypt'";
-        return 1;
-    }
-
-    if (!success) {
-        qCritical() << (mode == "encrypt" ? "Encryption" : "Decryption") << "failed";
         return 1;
     }
 

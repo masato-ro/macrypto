@@ -6,11 +6,12 @@
                 "${workspaceFolder}/**",
                 "C:/Qt/6.9.1/msvc2022_64/include",
                 "C:/Qt/6.9.1/msvc2022_64/include/QtCore",
-                "C:/Qt/6.9.1/msvc2022_64/include/QtWidgets"
+                "C:/Qt/6.9.1/msvc2022_64/include/QtWidgets",
+                "C:/Qt/6.9.1/msvc2022_64/include/QtGui"
             ],
-                "defines": [
-                  "UNICODE",
-                  "_UNICODE"
+            "defines": [
+                "UNICODE",
+                "_UNICODE"
             ],
             "compilerPath": "C:/Qt/Tools/mingw1310_64/bin/g++.exe",
             "cStandard": "c17",
