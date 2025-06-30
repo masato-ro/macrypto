@@ -13,8 +13,14 @@ public:
     bool encryptFile(const QString &inFile, const QString &outFile, const QString &password);
     bool decryptFile(const QString &inFile, const QString &outFile, const QString &password);
 
+    bool encryptFile(const QString &inFile, const QString &outFile, const QString &password,
+                    std::function<void(int)> progressCallback);
+    bool decryptFile(const QString &inFile, const QString &outFile, const QString &password,
+                    std::function<void(int)> progressCallback);
+
 private:
-    bool cryptFile(const QString &inFile, const QString &outFile, const QString &password, bool encrypt);
+    bool cryptFile(const QString &inFile, const QString &outFile, const QString &password,
+               bool encrypt, std::function<void(int)> progressCallback);
 
     static constexpr int KEY_LEN = 32;   // AES-256
     static constexpr int IV_LEN = 16;    // AES block size

@@ -1,18 +1,21 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "MinGW Qt6",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/qt6/QtCore",
-                "/usr/include/qt6",
-                "/usr/include/qt6/QtWidgets"
+                "C:/Qt/6.9.1/msvc2022_64/include",
+                "C:/Qt/6.9.1/msvc2022_64/include/QtCore",
+                "C:/Qt/6.9.1/msvc2022_64/include/QtWidgets"
             ],
-            "defines": [],
-            "compilerPath": "/usr/lib/llvm/19/bin/clang",
+                "defines": [
+                  "UNICODE",
+                  "_UNICODE"
+            ],
+            "compilerPath": "C:/Qt/Tools/mingw1310_64/bin/g++.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "linux-clang-x64"
+            "intelliSenseMode": "windows-gcc-x64"
         }
     ],
     "version": 4

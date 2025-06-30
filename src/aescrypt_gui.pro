@@ -6,15 +6,20 @@ TARGET = aescrypt_gui
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    aescrypt.cpp
+    aescrypt.cpp \
+    hashutil.cpp
 
 HEADERS += \
     ../include/mainwindow.h \
-    ../include/aescrypt.h
+    ../include/aescrypt.h \
 
 FORMS += \
     mainwindow.ui
 
 INCLUDEPATH += ../include
-LIBS += -L../lib64 -lssl -lcrypto
-QMAKE_LFLAGS += -Wl,-rpath,'$$ORIGIN/../lib64'
+INCLUDEPATH += C:/OpenSSL-MSVC/include
+
+LIBS += -LC:/OpenSSL-MSVC/lib -llibssl -llibcrypto
+
+RC_FILE = app.rc
+RESOURCES += resources.qrc

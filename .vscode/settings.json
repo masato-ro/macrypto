@@ -2,6 +2,10 @@
     "files.associations": {
         "iostream": "cpp",
         "qmainwindow": "cpp",
-        "qfiledialog": "cpp"
-    }
+        "qfiledialog": "cpp",
+        "new": "cpp",
+        "qapplication": "cpp",
+        "qfile": "cpp"
+    },
+    "cmake.ignoreCMakeListsMissing": true
 }

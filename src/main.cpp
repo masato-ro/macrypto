@@ -1,41 +1,129 @@
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QProcess>
+#include <QFile>
 #include <QDebug>
+#include <QDir>
+#include <QMessageBox>
+#include <QRegularExpression>
 #include <openssl/opensslv.h>
 #include "aescrypt.h"
 #include "mainwindow.h"
 
+// 用 GPGME 用密碼解密
+bool decryptGPGWithPassphrase(const QString &inFile, const QString &outFile, const QString &password)
+{
+    // 輸入檔案存在檢查
+    if (!QFile::exists(inFile)) {
+        qWarning() << "Input file does not exist:" << inFile;
+        return false;
+    }
+
+    // 準備 gpg.exe 參數
+    QStringList args;
+    args << "--batch"      // 不互動
+         << "--yes"        // 自動覆寫輸出檔
+         << "--passphrase" << password
+         << "-o" << outFile
+         << "-d" << inFile;
+
+    QProcess gpg;
+    gpg.start("./gpg/bin/gpg.exe", args);
+
+    if (!gpg.waitForFinished(15000)) {  // 等待最多 15 秒
+        qWarning() << "gpg process timeout or failed to start";
+        return false;
+    }
+
+    // 讀錯誤輸出，檢查是否有錯誤訊息
+    QByteArray stderrOutput = gpg.readAllStandardError();
+    if (!stderrOutput.isEmpty()) {
+        qWarning() << "gpg error output:" << stderrOutput;
+    }
+
+    // 檢查 gpg 執行結果
+    if (gpg.exitCode() != 0) {
+        qWarning() << "gpg process exited with code" << gpg.exitCode();
+        return false;
+    }
+
+    // 輸出檔案是否產生及大小檢查
+    QFile outFileObj(outFile);
+    if (!outFileObj.exists() || outFileObj.size() == 0) {
+        qWarning() << "Output file not created or empty:" << outFile;
+        return false;
+    }
+
+    return true;
+}
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    app.setStyle("windows");
 
-    // 設定應用程式名稱和版本
     app.setApplicationName("aescrypt");
     app.setApplicationVersion("1.0");
-    
+
     QCommandLineParser parser;
-    parser.setApplicationDescription("AES-256-CBC File Encrypt/Decrypt Tool");
+    parser.setApplicationDescription("Macrypt - AES/GPG Encrypt/Decrypt Tool");
     parser.addHelpOption();
-    
-    // 添加版本選項
+
     parser.addPositionalArgument("mode", "Mode of operation: encrypt or decrypt");
     parser.addPositionalArgument("input", "Path to the input file to encrypt/decrypt");
-    parser.addPositionalArgument("output", "Path to the output file to write the result");
-    parser.addPositionalArgument("password", "Password for AES encryption/decryption");
-    
+    parser.addPositionalArgument("output", "Path to the output file");
+    parser.addPositionalArgument("password", "Password for encryption/decryption");
+
     QCommandLineOption versionOption(QStringList() << "v" << "version", "Show application and OpenSSL version");
     parser.addOption(versionOption);
 
     parser.process(app);
 
-    // 檢查是否需要顯示版本
-    if (parser.isSet(versionOption)) {
-        qInfo().noquote() << QString("%1 version %2").arg(app.applicationName(), app.applicationVersion());
-        qInfo().noquote() << QString("Using OpenSSL: %1").arg(OPENSSL_VERSION_TEXT);
+   if (parser.isSet(versionOption)) {
+        QString versionText = QString("%1 version %2\nUsing OpenSSL: %3")
+                            .arg(app.applicationName())
+                            .arg(app.applicationVersion())
+                            .arg(OPENSSL_VERSION_TEXT);
+
+        QProcess gpgProc;
+        QString gpgPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/gpg/bin/gpg.exe");
+        gpgProc.setProgram(gpgPath);
+        gpgProc.setArguments(QStringList() << "--version");
+
+        gpgProc.start();
+        if (gpgProc.waitForStarted(3000)) {
+            if (gpgProc.waitForFinished(3000)) {
+                QByteArray gpgOutput = gpgProc.readAllStandardOutput();
+                QStringList lines = QString::fromUtf8(gpgOutput).split('\n');
+
+                // 解析 GPG 主版本
+                if (!lines.isEmpty() && lines[0].contains("gpg")) {
+                    QRegularExpression reGpg(R"(gpg\s+\(.*?\)\s+([0-9]+\.[0-9]+\.[0-9]+))");
+                    QRegularExpressionMatch matchGpg = reGpg.match(lines[0]);
+                    if (matchGpg.hasMatch()) {
+                        versionText += "\nGPG version: " + matchGpg.captured(1);
+                    }
+                }
+
+                // 解析 libgcrypt 版本
+                if (lines.size() > 1 && lines[1].contains("libgcrypt")) {
+                    QRegularExpression reLib(R"(libgcrypt\s+([0-9]+\.[0-9]+\.[0-9]+))");
+                    QRegularExpressionMatch matchLib = reLib.match(lines[1]);
+                    if (matchLib.hasMatch()) {
+                        versionText += "\nlibgcrypt version: " + matchLib.captured(1);
+                    }
+                }
+            } else {
+                versionText += "\nGPG process did not finish in time.";
+            }
+        } else {
+            versionText += "\nFailed to start gpg process.";
+        }
+
+        QMessageBox::information(nullptr, "Version", versionText);
         return 0;
     }
 
-    // 若只有執行 ./aescrypt（無任何參數），則開啟 GUI 模式
     const QStringList args = parser.positionalArguments();
     if (args.isEmpty()) {
         MainWindow w;
@@ -43,15 +131,9 @@ int main(int argc, char *argv[])
         return app.exec();
     }
 
-    // 檢查命令行參數
     if (args.size() != 4) {
         qCritical() << "Usage:\n  " << argv[0]
-                    << " <encrypt|decrypt> <input> <output> <password>\n\n"
-                    << "Description:\n"
-                    << "  Encrypt or decrypt a file using AES-256-CBC with PBKDF2.\n\n"
-                    << "Example:\n"
-                    << "  " << argv[0] << " encrypt test.txt encrypted.bin mypassword\n"
-                    << "  " << argv[0] << " decrypt encrypted.bin decrypted.txt mypassword";
+                    << " <encrypt|decrypt> <input> <output> <password>";
         return 1;
     }
 
@@ -62,18 +144,20 @@ int main(int argc, char *argv[])
 
     AESCrypt crypt;
     bool success = false;
-    
-    // 根據模式選擇加密或解密
+
     if (mode == "encrypt") {
         success = crypt.encryptFile(inputFile, outputFile, password);
     } else if (mode == "decrypt") {
-        success = crypt.decryptFile(inputFile, outputFile, password);
+        if (inputFile.endsWith(".gpg", Qt::CaseInsensitive)) {
+            success = decryptGPGWithPassphrase(inputFile, outputFile, password);
+        } else {
+            success = crypt.decryptFile(inputFile, outputFile, password);
+        }
     } else {
         qCritical() << "Mode must be 'encrypt' or 'decrypt'";
         return 1;
     }
 
-    // 檢查操作是否成功    
     if (!success) {
         qCritical() << (mode == "encrypt" ? "Encryption" : "Decryption") << "failed";
         return 1;

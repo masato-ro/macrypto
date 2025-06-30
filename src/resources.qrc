@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/licenses">
+        <file>mit.txt</file>
+        <file>lgpl-3.0.txt</file>
+        <file>apache-2.0.txt</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>app.ico</file>
+    </qresource>
+</RCC>

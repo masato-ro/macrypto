@@ -9,15 +9,28 @@ AESCrypt::AESCrypt(QObject *parent) : QObject(parent) {}
 
 // 提供加密和解密文件的接口
 bool AESCrypt::encryptFile(const QString &inFile, const QString &outFile, const QString &password) {
-    return cryptFile(inFile, outFile, password, true);
+    return encryptFile(inFile, outFile, password, nullptr); // 傳空 progress callback
 }
 
 bool AESCrypt::decryptFile(const QString &inFile, const QString &outFile, const QString &password) {
-    return cryptFile(inFile, outFile, password, false);
+    return decryptFile(inFile, outFile, password, nullptr);
+}
+
+// 支持進度回調的加密和解密接口
+bool AESCrypt::encryptFile(const QString &inFile, const QString &outFile, const QString &password,
+                           std::function<void(int)> progressCallback)
+{
+    return cryptFile(inFile, outFile, password, true, progressCallback);
+}
+
+bool AESCrypt::decryptFile(const QString &inFile, const QString &outFile, const QString &password,
+                           std::function<void(int)> progressCallback)
+{
+    return cryptFile(inFile, outFile, password, false, progressCallback);
 }
 
 // 實際的加密/解密邏輯
-bool AESCrypt::cryptFile(const QString &inFile, const QString &outFile, const QString &password, bool encrypt)
+bool AESCrypt::cryptFile(const QString &inFile, const QString &outFile, const QString &password, bool encrypt, std::function<void(int)> progressCallback = nullptr)
 {
     QFile in(inFile);
     QFile out(outFile);
@@ -95,17 +108,23 @@ bool AESCrypt::cryptFile(const QString &inFile, const QString &outFile, const QS
 
     int outLen = 0;
 
+    // 計算總字節數以便進度回調
+    qint64 totalBytes = in.size();
+    qint64 processedBytes = 0;
+
     // 讀取輸入檔案並進行加密或解密
     while (!(in.atEnd())) {
         inBuf = in.read(4096);
 
         int ret = 0;
         if (encrypt) {
-            ret = EVP_EncryptUpdate(ctx, reinterpret_cast<unsigned char*>(outBuf.data()), &outLen,
-                                    reinterpret_cast<const unsigned char*>(inBuf.constData()), inBuf.size());
+            ret = EVP_EncryptUpdate(ctx,
+                reinterpret_cast<unsigned char*>(outBuf.data()), &outLen,
+                reinterpret_cast<const unsigned char*>(inBuf.constData()), inBuf.size());
         } else {
-            ret = EVP_DecryptUpdate(ctx, reinterpret_cast<unsigned char*>(outBuf.data()), &outLen,
-                                    reinterpret_cast<const unsigned char*>(inBuf.constData()), inBuf.size());
+            ret = EVP_DecryptUpdate(ctx,
+                reinterpret_cast<unsigned char*>(outBuf.data()), &outLen,
+                reinterpret_cast<const unsigned char*>(inBuf.constData()), inBuf.size());
         }
 
         if (ret != 1) {
@@ -115,6 +134,12 @@ bool AESCrypt::cryptFile(const QString &inFile, const QString &outFile, const QS
         }
 
         out.write(outBuf.constData(), outLen);
+        
+        processedBytes += inBuf.size();
+        if (progressCallback && totalBytes > 0) {
+            int percent = static_cast<int>((processedBytes * 100) / totalBytes);
+            progressCallback(qMin(percent, 100));
+        }
     }
 
     int finalLen = 0;
@@ -124,12 +149,14 @@ bool AESCrypt::cryptFile(const QString &inFile, const QString &outFile, const QS
             EVP_CIPHER_CTX_free(ctx);
             return false;
         }
+        if (progressCallback) progressCallback(100);
     } else {
         if (EVP_DecryptFinal_ex(ctx, reinterpret_cast<unsigned char*>(outBuf.data()), &finalLen) != 1) {
             qWarning("EVP_DecryptFinal_ex failed. 密碼錯誤或檔案損壞");
             EVP_CIPHER_CTX_free(ctx);
             return false;
         }
+        if (progressCallback) progressCallback(100);
     }
     out.write(outBuf.constData(), finalLen);
 
