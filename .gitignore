@@ -4,6 +4,7 @@ release
 out/
 test/
 old/
+.vscode
 *.o
 *.obj
 *.so
