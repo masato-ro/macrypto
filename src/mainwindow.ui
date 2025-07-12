@@ -32,7 +32,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QTabWidget" name="tabWidget">
+   <widget class="QTabWidget" name="tabGenerateKey">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -45,7 +45,7 @@
      <enum>QTabWidget::TabShape::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <property name="tabsClosable">
      <bool>false</bool>
@@ -70,14 +70,14 @@
        <bool>true</bool>
       </property>
       <property name="placeholderText">
-       <string>Status messages will appear here...</string>
+       <string>Status messages will be displayed here...</string>
       </property>
      </widget>
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>1</y>
+        <y>10</y>
         <width>401</width>
         <height>114</height>
        </rect>
@@ -171,7 +171,7 @@
        <rect>
         <x>10</x>
         <y>130</y>
-        <width>401</width>
+        <width>91</width>
         <height>23</height>
        </rect>
       </property>
@@ -192,6 +192,229 @@
        <number>0</number>
       </property>
      </widget>
+     <widget class="QPushButton" name="pushButtonClearLog">
+      <property name="geometry">
+       <rect>
+        <x>110</x>
+        <y>130</y>
+        <width>91</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Clear</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="widget">
+     <attribute name="title">
+      <string>Generate Key</string>
+     </attribute>
+     <widget class="QLabel" name="labelKeyLength">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>131</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Key Length</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBoxKeyLength">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>10</y>
+        <width>181</width>
+        <height>23</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="labelPrivateKeyPath">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>141</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Private Key Output Path</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEditPrivateKeyPath">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>40</y>
+        <width>181</width>
+        <height>21</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButtonBrowsePrivate">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>40</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Browse...</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="labelPublicKeyPath">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>70</y>
+        <width>141</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Public Key Output Path</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEditPublicKeyPath">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>70</y>
+        <width>181</width>
+        <height>21</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButtonBrowsePublic">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>70</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Browse...</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButtonGenerateKey">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>130</y>
+        <width>91</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Generate Key</string>
+      </property>
+     </widget>
+     <widget class="QTextEdit" name="textEditKeyLog">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>160</y>
+        <width>401</width>
+        <height>171</height>
+       </rect>
+      </property>
+      <property name="placeholderText">
+       <string>The result of the generated key will be displayed here.</string>
+      </property>
+     </widget>
+     <widget class="QProgressBar" name="progressBarKey">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>340</y>
+        <width>401</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="value">
+       <number>0</number>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBoxConvertToSSH">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>100</y>
+        <width>201</width>
+        <height>19</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Generate OpenSSH Public Key.</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEditComment">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>290</x>
+        <y>100</y>
+        <width>121</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Leave empty to use machine hostname.</string>
+      </property>
+      <property name="placeholderText">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="labelComment">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>100</y>
+        <width>61</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Comment:</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButtonCopyKey">
+      <property name="geometry">
+       <rect>
+        <x>110</x>
+        <y>130</y>
+        <width>121</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Copy SSH Pub Key</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButtonClearEditKeyLog">
+      <property name="geometry">
+       <rect>
+        <x>240</x>
+        <y>130</y>
+        <width>91</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Clear</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">
@@ -203,8 +426,8 @@
      <widget class="QComboBox" name="comboAlgorithm">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>30</y>
+        <x>120</x>
+        <y>10</y>
         <width>291</width>
         <height>23</height>
        </rect>
@@ -216,10 +439,10 @@
      <widget class="QPlainTextEdit" name="plainTextInput">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>60</y>
+        <x>120</x>
+        <y>40</y>
         <width>291</width>
-        <height>51</height>
+        <height>41</height>
        </rect>
       </property>
       <property name="toolTip">
@@ -236,7 +459,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>150</y>
+        <y>130</y>
         <width>75</width>
         <height>23</height>
        </rect>
@@ -251,8 +474,8 @@
      <widget class="QPushButton" name="btnSelectFile">
       <property name="geometry">
        <rect>
-        <x>230</x>
-        <y>120</y>
+        <x>340</x>
+        <y>90</y>
         <width>75</width>
         <height>23</height>
        </rect>
@@ -264,8 +487,8 @@
      <widget class="QLineEdit" name="lineEditFilePath">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>120</y>
+        <x>120</x>
+        <y>90</y>
         <width>211</width>
         <height>21</height>
        </rect>
@@ -284,7 +507,7 @@
       <property name="geometry">
        <rect>
         <x>90</x>
-        <y>150</y>
+        <y>130</y>
         <width>75</width>
         <height>23</height>
        </rect>
@@ -303,9 +526,9 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>180</y>
+        <y>160</y>
         <width>401</width>
-        <height>151</height>
+        <height>171</height>
        </rect>
       </property>
       <property name="markdown">
@@ -322,7 +545,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="placeholderText">
-       <string>The result of the hash will appear here.  </string>
+       <string>The result of the hash will be displayed here.  </string>
       </property>
      </widget>
      <widget class="QLabel" name="label">
@@ -330,7 +553,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <rect>
         <x>10</x>
         <y>10</y>
-        <width>71</width>
+        <width>111</width>
         <height>16</height>
        </rect>
       </property>
@@ -342,7 +565,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <property name="geometry">
        <rect>
         <x>170</x>
-        <y>150</y>
+        <y>130</y>
         <width>75</width>
         <height>23</height>
        </rect>
@@ -362,6 +585,48 @@ li.checked::marker { content: &quot;\2612&quot;; }
       </property>
       <property name="value">
        <number>0</number>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>111</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Text to be hashed:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_input_3">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>90</y>
+        <width>111</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Input file to be hashed:</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButtonClearHashResult">
+      <property name="geometry">
+       <rect>
+        <x>250</x>
+        <y>130</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Clear</string>
       </property>
      </widget>
     </widget>
@@ -395,7 +660,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <bool>true</bool>
       </property>
       <property name="placeholderText">
-       <string>Status messages will appear here...</string>
+       <string>Status messages will be displayed here...</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_decryptGPG">
@@ -403,7 +668,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <rect>
         <x>10</x>
         <y>130</y>
-        <width>401</width>
+        <width>91</width>
         <height>23</height>
        </rect>
       </property>
@@ -492,34 +757,76 @@ li.checked::marker { content: &quot;\2612&quot;; }
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
-     <string>File</string>
+     <string>&amp;File</string>
     </property>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="actionAbout"/>
     <addaction name="actionAbout_Qt"/>
    </widget>
+   <widget class="QMenu" name="menuMode">
+    <property name="title">
+     <string>&amp;Mode</string>
+    </property>
+    <addaction name="actionAES_Encrypt_Decrypt"/>
+    <addaction name="actionGenerate_Key"/>
+    <addaction name="actionHash_Digest"/>
+    <addaction name="actionGPG_Decrypt"/>
+   </widget>
    <addaction name="menu"/>
+   <addaction name="menuMode"/>
    <addaction name="menu_2"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionAbout">
    <property name="text">
-    <string>About</string>
+    <string>&amp;About</string>
    </property>
   </action>
   <action name="actionExit">
    <property name="text">
-    <string>Exit</string>
+    <string>E&amp;xit</string>
    </property>
   </action>
   <action name="actionAbout_Qt">
    <property name="text">
-    <string>About Qt</string>
+    <string>About &amp;Qt</string>
+   </property>
+  </action>
+  <action name="actionAES_Encrypt_Decrypt">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>AES Encrypt/Decrypt</string>
+   </property>
+  </action>
+  <action name="actionGenerate_Key">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Generate Key</string>
+   </property>
+  </action>
+  <action name="actionHash_Digest">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Hash Digest</string>
+   </property>
+  </action>
+  <action name="actionGPG_Decrypt">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>GPG Decrypt</string>
    </property>
   </action>
  </widget>

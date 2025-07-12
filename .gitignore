@@ -1,10 +1,10 @@
 # 忽略 build 目錄
 build/
-release
 out/
 test/
 old/
 .vscode
+.release
 *.o
 *.obj
 *.so

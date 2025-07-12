@@ -152,7 +152,7 @@ bool AESCrypt::cryptFile(const QString &inFile, const QString &outFile, const QS
         if (progressCallback) progressCallback(100);
     } else {
         if (EVP_DecryptFinal_ex(ctx, reinterpret_cast<unsigned char*>(outBuf.data()), &finalLen) != 1) {
-            qWarning("EVP_DecryptFinal_ex failed. 密碼錯誤或檔案損壞");
+            qWarning("EVP_DecryptFinal_ex failed. Incorrect password or corrupted file.");
             EVP_CIPHER_CTX_free(ctx);
             return false;
         }

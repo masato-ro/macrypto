@@ -1,22 +1,23 @@
 {
     "configurations": [
         {
-            "name": "MinGW Qt6",
+            "name": "MSVC 2022 Qt6",
             "includePath": [
                 "${workspaceFolder}/**",
                 "C:/Qt/6.9.1/msvc2022_64/include",
                 "C:/Qt/6.9.1/msvc2022_64/include/QtCore",
                 "C:/Qt/6.9.1/msvc2022_64/include/QtWidgets",
-                "C:/Qt/6.9.1/msvc2022_64/include/QtGui"
+                "C:/Qt/6.9.1/msvc2022_64/include/QtGui",
+                "C:/Qt/6.9.1/msvc2022_64/include/QtTest"
             ],
             "defines": [
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "C:/Qt/Tools/mingw1310_64/bin/g++.exe",
+            "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "windows-gcc-x64"
+            "intelliSenseMode": "windows-msvc-x64"
         }
     ],
     "version": 4

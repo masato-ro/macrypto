@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "hashutil.h"
+#include "GPGController.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -31,10 +33,20 @@ private slots:
     void on_actionExit_triggered();
     void on_actionAbout_triggered();
     void on_actionAbout_Qt_triggered();
+    void on_pushButtonGenerateKey_clicked();
+    void on_pushButtonBrowsePrivate_clicked();
+    void on_pushButtonBrowsePublic_clicked();
+    void copyOpenSSHPublicKeyToClipboard();
+    void on_pushButtonClearLog_clicked();
+    void on_pushButtonClearEditKeyLog_clicked();
+    void on_pushButtonClearHashResult_clicked();
 
 private:
     Ui::MainWindow *ui;
     void showLicenseDialog(const QString &title, const QString &resourcePath);
+    HashAlgorithm currentSelectedAlgorithm() const;
+    GPGController *gpgController;    
+    void onTabChanged(int index);    
 };
 
 #endif // MAINWINDOW_H

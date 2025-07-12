@@ -2,6 +2,24 @@
 #include <QFile>
 #include <QCryptographicHash>
 
+HashAlgorithm toHashAlgorithm(const QString &algStr) {
+    if (algStr == "MD5") return HashAlgorithm::MD5;
+    if (algStr == "SHA-1") return HashAlgorithm::SHA1;
+    if (algStr == "SHA-256") return HashAlgorithm::SHA256;
+    if (algStr == "SHA-3-256") return HashAlgorithm::SHA3_256;
+    return HashAlgorithm::MD5;  // 預設值
+}
+
+QString hashAlgorithmToString(HashAlgorithm algorithm) {
+    switch (algorithm) {
+        case HashAlgorithm::MD5: return "MD5";
+        case HashAlgorithm::SHA1: return "SHA-1";
+        case HashAlgorithm::SHA256: return "SHA-256";
+        case HashAlgorithm::SHA3_256: return "SHA-3-256";
+    }
+    return "MD5";
+}
+
 QString HashUtil::computeHashFromText(const QString &text, HashAlgorithm algorithm) {
     QByteArray data = text.toUtf8();
     QCryptographicHash::Algorithm algo = QCryptographicHash::Md5;

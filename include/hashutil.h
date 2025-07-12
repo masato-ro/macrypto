@@ -10,6 +10,9 @@ enum class HashAlgorithm {
     SHA3_256
 };
 
+HashAlgorithm toHashAlgorithm(const QString &algStr);
+QString hashAlgorithmToString(HashAlgorithm algorithm);  // 可選：反向轉換
+
 class HashUtil {
 public:
     static QString computeHashFromText(const QString &text, HashAlgorithm algorithm);

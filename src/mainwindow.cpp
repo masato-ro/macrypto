@@ -1,9 +1,16 @@
+#include <openssl/opensslv.h>
+#include <openssl/crypto.h>
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "aescrypt.h"
+#include "aescontroller.h"
+#include "keygen.h"
+#include "keycontroller.h"
 #include "hashutil.h"
-#include <openssl/opensslv.h>
-#include <openssl/crypto.h>
+#include "hashcontroller.h"
+#include "gpgcontroller.h"
+
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QApplication>
@@ -20,21 +27,64 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(tr("Macrypt - AES/GPG Encrypt/Decrypt Tool"));
     
     ui->comboAlgorithm->addItems(QStringList() << "MD5" << "SHA-1" << "SHA-256" << "SHA-3-256");
+    ui->comboBoxKeyLength->addItems(QStringList() << "1024" << "2048" << "4096");
     ui->lineEditFilePath->installEventFilter(this);
     ui->lineEditFilePath->setAcceptDrops(true);
+
+    connect(ui->checkBoxConvertToSSH, &QCheckBox::toggled, this, [this](bool checked) {
+        ui->lineEditComment->setEnabled(checked);
+    });
+
+    connect(ui->pushButtonCopyKey, &QPushButton::clicked, this, &MainWindow::copyOpenSSHPublicKeyToClipboard);
+
+    // 設定 tab 切換事件
+    connect(ui->tabGenerateKey, &QTabWidget::currentChanged, this, &MainWindow::onTabChanged);
+
+    // 初始時設定當前 tab
+    onTabChanged(ui->tabGenerateKey->currentIndex());
+
+    // 設定動作與對應的 tab index
+    connect(ui->actionAES_Encrypt_Decrypt, &QAction::triggered, this, [=]() {
+        ui->tabGenerateKey->setCurrentIndex(0);
+    });
+    connect(ui->actionGenerate_Key, &QAction::triggered, this, [=]() {
+        ui->tabGenerateKey->setCurrentIndex(1);
+    });
+    connect(ui->actionHash_Digest, &QAction::triggered, this, [=]() {
+        ui->tabGenerateKey->setCurrentIndex(2);
+    });
+    connect(ui->actionGPG_Decrypt, &QAction::triggered, this, [=]() {
+        ui->tabGenerateKey->setCurrentIndex(3);
+    });
+
+    // 初始化 GPG 控制器
+    gpgController = new GPGController(this);
 }
 
 MainWindow::~MainWindow() {
     delete ui;
 }
 
-// 將字串轉換為 HashAlgorithm 枚舉
-static HashAlgorithm toHashAlgorithm(const QString &algStr) {
-    if (algStr == "MD5") return HashAlgorithm::MD5;
-    if (algStr == "SHA-1") return HashAlgorithm::SHA1;
-    if (algStr == "SHA-256") return HashAlgorithm::SHA256;
-    if (algStr == "SHA-3-256") return HashAlgorithm::SHA3_256;
-    return HashAlgorithm::MD5; // 預設
+void MainWindow::onTabChanged(int index) {
+    ui->actionAES_Encrypt_Decrypt->setChecked(index == 0);
+    ui->actionGenerate_Key->setChecked(index == 1);
+    ui->actionHash_Digest->setChecked(index == 2);
+    ui->actionGPG_Decrypt->setChecked(index == 3);
+}
+
+void MainWindow::on_pushButton_browseInput_clicked() {
+    QString filename = QFileDialog::getOpenFileName(this, "Select input file");
+    if (!filename.isEmpty()) {
+        ui->lineEdit_input->setText(filename);
+    }
+}
+
+void MainWindow::on_pushButton_browseOutput_clicked() {
+    QString filename = QFileDialog::getSaveFileName(this, "Select output file");
+    if (!filename.isEmpty()) {
+        ui->lineEdit_output->setText(filename);
+    }
+
 }
 
 void MainWindow::on_pushButton_start_clicked() {
@@ -53,18 +103,16 @@ void MainWindow::on_pushButton_start_clicked() {
         return;
     }
 
-    AESCrypt crypt;
     bool ok = false;
-
     if (mode == "Encrypt") {
         ui->textEdit_log->append("🔐 進行加密中...");
-        ok = crypt.encryptFile(input, output, password, [=](int percent) {
+        ok = AESController::runEncrypt(input, output, password, [=](int percent) {
             ui->progressBar->setValue(percent);
             QCoreApplication::processEvents();
         });
     } else {
         ui->textEdit_log->append("🔓 進行解密中...");
-        ok = crypt.decryptFile(input, output, password, [=](int percent) {
+        ok = AESController::runDecrypt(input, output, password, [=](int percent) {
             ui->progressBar->setValue(percent);
             QCoreApplication::processEvents();
         });
@@ -79,136 +127,11 @@ void MainWindow::on_pushButton_start_clicked() {
     ui->progressBar->setValue(100);
 }
 
-void MainWindow::on_pushButton_browseInput_clicked() {
-    QString filename = QFileDialog::getOpenFileName(this, "Select input file");
-    if (!filename.isEmpty()) {
-        ui->lineEdit_input->setText(filename);
-    }
+void MainWindow::on_pushButtonClearLog_clicked() {
+    ui->textEdit_log->clear();
 }
 
-void MainWindow::on_pushButton_browseOutput_clicked() {
-    QString filename = QFileDialog::getSaveFileName(this, "Select output file");
-    if (!filename.isEmpty()) {
-        ui->lineEdit_output->setText(filename);
-    }
 
-}
-
-void MainWindow::on_btnHashText_clicked()
-{
-    QString inputText = ui->plainTextInput->toPlainText();
-    QString algorithmStr = ui->comboAlgorithm->currentText();
-    HashAlgorithm algorithm = toHashAlgorithm(algorithmStr);
-
-    QString result = HashUtil::computeHashFromText(inputText, algorithm);
-    ui->textEditHashResult->setPlainText(result);
-}
-
-void MainWindow::on_btnSelectFile_clicked()
-{
-    QString fileName = QFileDialog::getOpenFileName(this, tr("選擇檔案"));
-    if (!fileName.isEmpty()) {
-        ui->lineEditFilePath->setText(fileName);
-    }
-}
-
-void MainWindow::on_btnHashFile_clicked()
-{
-    QString fileName = ui->lineEditFilePath->text();
-    QString algorithmStr = ui->comboAlgorithm->currentText();
-    HashAlgorithm algorithm = toHashAlgorithm(algorithmStr);
-
-    ui->progressBar_2->setValue(0);
-
-    QString result = HashUtil::computeHashFromFile(fileName, algorithm, [&](int percent){
-        ui->progressBar_2->setValue(percent);
-        QCoreApplication::processEvents();  // 確保 UI 即時更新
-    });
-
-    ui->textEditHashResult->setPlainText(result);
-}
-
-void MainWindow::on_pushButton_copyHash_clicked() {
-    QString hashText = ui->textEditHashResult->toPlainText();
-    if (hashText.isEmpty()) {
-        QMessageBox::warning(this, tr("錯誤"), tr("沒有可複製的 Hash 結果。"));
-        return;
-    }
-
-    QClipboard *clipboard = QApplication::clipboard();
-    clipboard->setText(hashText);
-    QMessageBox::information(this, tr("成功"), tr("Hash 結果已複製到剪貼簿。"));
-}
-
-void MainWindow::on_pushButtonGPG_browseInput_clicked() {
-    QString file = QFileDialog::getOpenFileName(this, tr("選擇加密檔案 (*.gpg)"));
-    if (!file.isEmpty())
-        ui->lineEditGPG_input->setText(file);
-}
-
-void MainWindow::on_pushButtonGPG_browseOutput_clicked() {
-    QString file = QFileDialog::getSaveFileName(this, tr("選擇輸出檔案"));
-    if (!file.isEmpty())
-        ui->lineEditGPG_output->setText(file);
-}
-
-void MainWindow::on_pushButtonGenerateKey_clicked() {
-    int bits = ui->comboBoxKeyLength->currentText().toInt();
-    QString privPath = ui->lineEditPrivateKeyPath->text();
-    QString pubPath = ui->lineEditPublicKeyPath->text();
-
-    if (input.isEmpty() || output.isEmpty()) {
-        ui->textEditGPG_log->append("❗請填入輸入與輸出路徑！");
-        return;
-    }
-
-    QString gpgPath = QCoreApplication::applicationDirPath() + "/gpg/bin/gpg.exe";
-    QFileInfo gpgExe(gpgPath);
-    if (!gpgExe.exists()) {
-        ui->textEditGPG_log->append("❗找不到 gpg.exe！");
-        return;
-    }
-
-    // 建立 QProcess 執行 gpg
-    QProcess *gpgProc = new QProcess(this);
-    QStringList args = {
-        "--yes",
-        "-o", output,
-        "-d", input
-    };
-
-    ui->textEditGPG_log->append("🔐 開始解密中，請等待pinentry window...");
-    ui->progressBarGPG->setRange(0, 0); // 不確定進度
-
-    connect(gpgProc, &QProcess::readyReadStandardOutput, this, [=]() {
-        QByteArray output = gpgProc->readAllStandardOutput();
-        ui->textEditGPG_log->append(QString::fromUtf8(output));
-    });
-
-    connect(gpgProc, &QProcess::readyReadStandardError, this, [=]() {
-        QByteArray err = gpgProc->readAllStandardError();
-        ui->textEditGPG_log->append(QString::fromUtf8(err));
-    });
-
-    connect(gpgProc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
-        [=](int exitCode, QProcess::ExitStatus status) {
-            ui->progressBarGPG->setRange(0, 1);
-            ui->progressBarGPG->setValue(1);
-
-            if (exitCode == 0 && status == QProcess::NormalExit) {
-                ui->textEditGPG_log->append("✅ 解密成功！");
-                QString agentPath = QCoreApplication::applicationDirPath() + "/gpg/bin/gpg-connect-agent.exe";
-                QProcess::startDetached(agentPath, QStringList() << "reloadagent" << "/bye");
-                ui->textEditGPG_log->append("🔒 已清除 GPG 密碼快取（下次會重新要求輸入）。");
-            } else {
-                ui->textEditGPG_log->append("❌ 解密失敗！");
-            }
-
-            gpgProc->deleteLater();
-        });
-
-    gpgProc->start(gpgPath, args);
-}
 
 void MainWindow::on_pushButtonBrowsePrivate_clicked()
 {
@@ -236,65 +159,212 @@ void MainWindow::on_pushButtonGenerateKey_clicked() {
         return;
     }
 
-    bool success = generateRSAKeyPair(bits, privPath, pubPath);
-    ui->progressBarKey->setRange(0, 1); // 完成時設定為 determinate
+    ui->progressBarKey->setRange(0, 1);
     ui->progressBarKey->setValue(1);
-    
-    if (success) {
-        ui->textEditKeyLog->append("✅ 金鑰產生完成！");
-    } else {
-        ui->textEditKeyLog->append("❌ 金鑰產生失敗！");
+
+    KeyController controller;
+    bool success = controller.generate(bits, privPath, pubPath,
+                                       ui->checkBoxConvertToSSH->isChecked(),
+                                       ui->lineEditComment->text());
+
+    if (!success) {
+        ui->textEditKeyLog->append("❌ 金鑰產生失敗：" + controller.getLastError());
+        return;
     }
 
+    ui->textEditKeyLog->append("✅ 金鑰產生完成！");
+    ui->textEditKeyLog->append("🔐 私鑰：" + privPath);
+    ui->textEditKeyLog->append("🔓 公鑰：" + pubPath);
+    ui->textEditKeyLog->append("⚠️ 請妥善保管私鑰，切勿洩漏或上傳！");
+
     if (ui->checkBoxConvertToSSH->isChecked()) {
-        EVP_PKEY *pkey = loadPrivateKeyFromFile(privPath);
-        QString sshPubKey;
-
-        if (pkey) {
-            QString comment = ui->lineEditComment->text().trimmed();
-            if (comment.isEmpty()) {
-                comment = QSysInfo::machineHostName();  // 預設使用機器名稱
-            }
-            sshPubKey = generateOpenSSHPublicKey(pkey, comment);
-            EVP_PKEY_free(pkey);
-        }
-
-        if (!sshPubKey.isEmpty()) {
-            QString baseName = QFileInfo(pubPath).completeBaseName();
-            QString sshPubPath = QFileInfo(pubPath).absolutePath() + "/" + baseName + ".pub";
-
-            QFile file(sshPubPath);
-            if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                QTextStream out(&file);
-                out << sshPubKey;
-                file.close();
-                ui->textEditKeyLog->append(QString("🔑 OpenSSH 公鑰已儲存：%1").arg(sshPubPath));
-                ui->textEditKeyLog->append("📄 OpenSSH 公鑰內容如下：");
-                ui->textEditKeyLog->append("----------- BEGIN SSH PUB KEY -----------");
-                ui->textEditKeyLog->append(sshPubKey);
-                ui->textEditKeyLog->append("------------ END SSH PUB KEY ------------");
-            } else {
-                ui->textEditKeyLog->append("❌ 無法寫入 OpenSSH 公鑰檔案！");
-            }
-        } else {
-            ui->textEditKeyLog->append("❌ 公鑰轉換失敗！");
-        }
-    } else {
-        ui->textEditKeyLog->append("❌ 金鑰產生失敗！");
+        ui->textEditKeyLog->append("🔑 OpenSSH 公鑰已儲存：" + controller.getSSHOutputPath());
+        ui->textEditKeyLog->append("📄 OpenSSH 公鑰內容如下：");
+        ui->textEditKeyLog->append("----------- BEGIN SSH PUB KEY -----------");
+        ui->textEditKeyLog->append(controller.getSSHPublicKey());
+        ui->textEditKeyLog->append("------------ END SSH PUB KEY ------------");
     }
 }
 
-void MainWindow::copyOpenSSHPublicKeyToClipboard() {
-    QString pubKey = ui->textEditOpenSSHPublicKey->toPlainText();
-    if (pubKey.isEmpty()) {
-        QMessageBox::warning(this, tr("錯誤"), tr("沒有可複製的 OpenSSH 公鑰。"));
+void MainWindow::copyOpenSSHPublicKeyToClipboard()
+{
+    QString pubKeyPath;
+
+    // 嘗試從最後產生的公鑰檔路徑取得
+    QString logText = ui->textEditKeyLog->toPlainText();
+    QString marker = "🔑 OpenSSH 公鑰已儲存：";
+    int pos = logText.lastIndexOf(marker);
+    if (pos != -1) {
+        int pathStart = pos + marker.length();
+        int pathEnd = logText.indexOf('\n', pathStart);
+        pubKeyPath = logText.mid(pathStart, pathEnd - pathStart).trimmed();
+    }
+
+    if (QFile::exists(pubKeyPath)) {
+        QFile file(pubKeyPath);
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QString pubKeyText = QString::fromUtf8(file.readAll());
+            QClipboard *clipboard = QGuiApplication::clipboard();
+            clipboard->setText(pubKeyText);
+            ui->textEditKeyLog->append("📋 OpenSSH 公鑰已複製到剪貼簿！");
+            file.close();
+        } else {
+            ui->textEditKeyLog->append("❌ 無法開啟 OpenSSH 公鑰檔案！");
+        }
+    } else {
+        ui->textEditKeyLog->append("❌ 找不到 OpenSSH 公鑰路徑！");
+    }
+}
+
+void MainWindow::on_pushButtonClearEditKeyLog_clicked() {
+    ui->textEditKeyLog->clear();
+}
+
+
+
+void MainWindow::on_btnSelectFile_clicked() {
+    QString fileName = QFileDialog::getOpenFileName(this, tr("選擇檔案"));
+    if (!fileName.isEmpty()) {
+        ui->lineEditFilePath->setText(fileName);
+    }
+}
+
+HashAlgorithm MainWindow::currentSelectedAlgorithm() const {
+    QString algorithmStr = ui->comboAlgorithm->currentText();
+    return toHashAlgorithm(algorithmStr);
+}
+
+void MainWindow::on_btnHashText_clicked() {
+    HashAlgorithm algorithm = currentSelectedAlgorithm();
+    QString inputText = ui->plainTextInput->toPlainText();
+
+    if (inputText.trimmed().isEmpty()) {
+        ui->textEditHashResult->setPlainText("❗ 請輸入文字以計算雜湊值。");
+        return;
+    }
+    
+    QString result = HashController::runHashFromText(inputText, algorithm);
+    
+    if (result.isEmpty()) {
+        ui->textEditHashResult->setPlainText("❌ 雜湊失敗，請檢查輸入內容。");
+    } else {
+        ui->textEditHashResult->setPlainText(result);
+    }
+}
+
+void MainWindow::on_btnHashFile_clicked() {
+    HashAlgorithm algorithm = currentSelectedAlgorithm();
+    QString fileName = ui->lineEditFilePath->text();
+
+    if (fileName.isEmpty()) {
+        ui->textEditHashResult->setPlainText("❗ 請選擇要計算雜湊值的檔案。");
+        return;
+    }
+
+    ui->progressBar_2->setValue(0);
+
+    QString result = HashController::runHashFromFile(fileName, algorithm, [&](int percent){
+        ui->progressBar_2->setValue(percent);
+        QCoreApplication::processEvents();  // 確保 UI 即時更新
+    });
+
+    if (result.isEmpty()) {
+        ui->textEditHashResult->setPlainText("❌ 雜湊失敗，可能無法讀取檔案。");
+    } else {
+        ui->textEditHashResult->setPlainText(result);
+    }
+}
+
+void MainWindow::on_pushButton_copyHash_clicked() {
+    QString hashText = ui->textEditHashResult->toPlainText();
+    if (hashText.isEmpty()) {
+        QMessageBox::warning(this, tr("錯誤"), tr("沒有可複製的 Hash 結果。"));
         return;
     }
 
     QClipboard *clipboard = QApplication::clipboard();
-    clipboard->setText(pubKey);
-    QMessageBox::information(this, tr("成功"), tr("OpenSSH 公鑰已複製到剪貼簿。"));
+    clipboard->setText(hashText);
+    QMessageBox::information(this, tr("成功"), tr("Hash 結果已複製到剪貼簿。"));
 }
+
+void MainWindow::on_pushButtonClearHashResult_clicked() {
+    ui->lineEditFilePath->clear();
+    ui->plainTextInput->clear();
+    ui->textEditHashResult->clear();
+    ui->progressBar_2->setValue(0);
+}
+
+
+
+void MainWindow::on_pushButtonGPG_browseInput_clicked() {
+    QString file = QFileDialog::getOpenFileName(this, tr("選擇加密檔案 (*.gpg)"));
+    if (!file.isEmpty())
+        ui->lineEditGPG_input->setText(file);
+}
+
+void MainWindow::on_pushButtonGPG_browseOutput_clicked() {
+    QString file = QFileDialog::getSaveFileName(this, tr("選擇輸出檔案"));
+    if (!file.isEmpty())
+        ui->lineEditGPG_output->setText(file);
+}
+
+// 這是你的 MainWindow.cpp 中的 on_pushButton_decryptGPG_clicked 函式
+
+void MainWindow::on_pushButton_decryptGPG_clicked() {
+    // 1. 獲取輸入/輸出路徑並初始化 UI 狀態
+    QString input = ui->lineEditGPG_input->text();
+    QString output = ui->lineEditGPG_output->text();
+    ui->textEditGPG_log->clear(); // 清空日誌區域
+    
+    // 將進度條設定為初始狀態：0% 且不顯示文字
+    ui->progressBarGPG->setRange(0, 100); 
+    ui->progressBarGPG->setValue(0);
+    ui->progressBarGPG->setTextVisible(false); // 初始狀態不顯示百分比文字
+
+    // 禁用按鈕，防止重複點擊
+    ui->pushButton_decryptGPG->setEnabled(false); 
+
+    // 2. 輸入驗證
+    if (input.isEmpty() || output.isEmpty()) {
+        ui->textEditGPG_log->append("❗請填入輸入與輸出路徑！");
+        
+        // 恢復按鈕和進度條
+        ui->pushButton_decryptGPG->setEnabled(true); 
+        ui->progressBarGPG->setRange(0, 100);
+        ui->progressBarGPG->setValue(0);
+        ui->progressBarGPG->setTextVisible(true); // 顯示百分比文字
+        return;
+    }
+
+    // 3. 呼叫 decryptFile 並傳遞回呼函式
+    gpgController->decryptFile(input, output,
+        // logCallback: 接收 GPGController 發送的日誌訊息並顯示
+        [=](const QString &logMsg) {
+            ui->textEditGPG_log->append(logMsg);
+        },
+        // progressCallback: 接收進度更新 (0 或 100) 並控制進度條顯示
+        [=](int percent) {
+            if (percent == 0) {
+                // 操作開始：設定為不確定模式 (會來回跑動的動畫)
+                ui->progressBarGPG->setRange(0, 0); // 這是關鍵！將 min 和 max 都設為 0
+                ui->progressBarGPG->setValue(0);    // 值不重要，模式已設定
+                ui->progressBarGPG->setTextVisible(false); // 不顯示百分比文字
+            } else if (percent == 100) {
+                // 操作結束：設定回確定模式，並顯示 100%
+                ui->progressBarGPG->setRange(0, 100); // 恢復正常範圍
+                ui->progressBarGPG->setValue(100);    // 設定為 100%
+                ui->progressBarGPG->setTextVisible(true); // 顯示百分比文字
+                // 這裡的狀態文字將由 finishedCallback 最終決定
+            }
+        },
+        // finishedCallback: 接收最終解密結果 (成功或失敗) 並更新 UI
+        [=](bool success) {
+            // progressCallback(100) 已經處理了進度條到 100%
+            ui->pushButton_decryptGPG->setEnabled(true); // 重新啟用按鈕
+        }
+    );
+}
+
 
 void MainWindow::on_actionExit_triggered() {
     qApp->quit();
@@ -350,7 +420,7 @@ void MainWindow::on_actionAbout_triggered() {
     .arg(QCoreApplication::applicationVersion());
 
     QLabel *iconLabel = new QLabel(dialog);
-    iconLabel->setPixmap(QIcon(":/app.ico").pixmap(64, 64));
+    iconLabel->setPixmap(QIcon(":/icons/app.ico").pixmap(64, 64));
     iconLabel->setAlignment(Qt::AlignCenter);
 
     QLabel *aboutLabel = new QLabel(aboutText, dialog);
@@ -366,10 +436,12 @@ void MainWindow::on_actionAbout_triggered() {
     QPushButton *licenseMITButton = new QPushButton(tr("MIT 授權"), dialog);
     QPushButton *licenseLGPLButton = new QPushButton(tr("LGPL 授權"), dialog);
     QPushButton *licenseApacheButton = new QPushButton(tr("Apache 授權"), dialog);
+    QPushButton *licenseGPLButton = new QPushButton(tr("GPL 授權"), dialog);
 
     buttonLayout->addWidget(licenseMITButton);
     buttonLayout->addWidget(licenseLGPLButton);
     buttonLayout->addWidget(licenseApacheButton);
+    buttonLayout->addWidget(licenseGPLButton);
 
     layout->addLayout(buttonLayout);
 
@@ -387,7 +459,10 @@ void MainWindow::on_actionAbout_triggered() {
     connect(licenseApacheButton, &QPushButton::clicked, this, [=]() {
         showLicenseDialog(tr("Apache 授權條文"), ":/licenses/apache-2.0.txt");
     });
-    
+    connect(licenseGPLButton, &QPushButton::clicked, this, [=]() {
+        showLicenseDialog(tr("GPL 授權條文"), ":/licenses/gpl-3.0.txt");
+    });
+
     dialog->setLayout(layout);
     dialog->exec();
 }

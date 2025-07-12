@@ -70,16 +70,32 @@ Macrypt supports two cryptographic modes:
 - Native AES file encryption using OpenSSL. This is a direct symmetric encryption implementation.
 - Decryption of .gpg files via GPG, which internally uses AES or other symmetric ciphers as part of the OpenPGP standard.
 
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
 
-Bundled libraries:
+### Bundled or Used Libraries:
 
-- **OpenSSL**: Apache License 2.0
-- **Qt**: LGPL
-- **GnuPG**: GPL-3.0-or-later
-- **libgcrypt**: LGPL-2.1-or-later
+- **Qt** – Used for GUI (Qt Widgets)  
+  License: [LGPL v3](https://www.qt.io/licensing)
+
+- **OpenSSL** – Used for cryptographic operations (e.g., RSA, AES), headers may be bundled  
+  License: [Apache License 2.0](https://www.openssl.org/source/license.html)  
+  If headers are bundled, see `include/openssl/` and `licenses/openssl_apache-2.0.txt`
+
+- **GnuPG (gpg.exe)** – Used for GPG decryption  
+  License: [GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0.html)
+
+- **libgcrypt** – Used by GnuPG  
+  License: [LGPL-2.1-or-later](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html)
+
+---
+
+### Additional Notes:
+
+You are responsible for complying with each library’s license if you redistribute the bundled binaries (e.g., `libcrypto-3.dll`, `gpg.exe`, etc.).
+
 
 ## About The PenguinBay Software
 
