@@ -152,11 +152,10 @@ void MainWindow::on_pushButtonGPG_browseOutput_clicked() {
         ui->lineEditGPG_output->setText(file);
 }
 
-void MainWindow::on_pushButton_decryptGPG_clicked() {
-    QString input = ui->lineEditGPG_input->text();
-    QString output = ui->lineEditGPG_output->text();
-    ui->textEditGPG_log->clear();
-    ui->progressBarGPG->setValue(0);
+void MainWindow::on_pushButtonGenerateKey_clicked() {
+    int bits = ui->comboBoxKeyLength->currentText().toInt();
+    QString privPath = ui->lineEditPrivateKeyPath->text();
+    QString pubPath = ui->lineEditPublicKeyPath->text();
 
     if (input.isEmpty() || output.isEmpty()) {
         ui->textEditGPG_log->append("❗請填入輸入與輸出路徑！");
@@ -209,6 +208,92 @@ void MainWindow::on_pushButton_decryptGPG_clicked() {
         });
 
     gpgProc->start(gpgPath, args);
+}
+
+void MainWindow::on_pushButtonBrowsePrivate_clicked()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, tr("選擇私鑰輸出位置"), "", tr("PEM 檔案 (*.pem)"));
+    if (!fileName.isEmpty()) {
+        ui->lineEditPrivateKeyPath->setText(fileName);
+    }
+}
+
+void MainWindow::on_pushButtonBrowsePublic_clicked()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, tr("選擇公鑰輸出位置"), "", tr("PEM 檔案 (*.pem)"));
+    if (!fileName.isEmpty()) {
+        ui->lineEditPublicKeyPath->setText(fileName);
+    }
+}
+
+void MainWindow::on_pushButtonGenerateKey_clicked() {
+    int bits = ui->comboBoxKeyLength->currentText().toInt();
+    QString privPath = ui->lineEditPrivateKeyPath->text();
+    QString pubPath = ui->lineEditPublicKeyPath->text();
+
+    if (privPath.isEmpty() || pubPath.isEmpty()) {
+        ui->textEditKeyLog->append("❗ 請先設定私鑰和公鑰輸出路徑！");
+        return;
+    }
+
+    bool success = generateRSAKeyPair(bits, privPath, pubPath);
+    ui->progressBarKey->setRange(0, 1); // 完成時設定為 determinate
+    ui->progressBarKey->setValue(1);
+    
+    if (success) {
+        ui->textEditKeyLog->append("✅ 金鑰產生完成！");
+    } else {
+        ui->textEditKeyLog->append("❌ 金鑰產生失敗！");
+    }
+
+    if (ui->checkBoxConvertToSSH->isChecked()) {
+        EVP_PKEY *pkey = loadPrivateKeyFromFile(privPath);
+        QString sshPubKey;
+
+        if (pkey) {
+            QString comment = ui->lineEditComment->text().trimmed();
+            if (comment.isEmpty()) {
+                comment = QSysInfo::machineHostName();  // 預設使用機器名稱
+            }
+            sshPubKey = generateOpenSSHPublicKey(pkey, comment);
+            EVP_PKEY_free(pkey);
+        }
+
+        if (!sshPubKey.isEmpty()) {
+            QString baseName = QFileInfo(pubPath).completeBaseName();
+            QString sshPubPath = QFileInfo(pubPath).absolutePath() + "/" + baseName + ".pub";
+
+            QFile file(sshPubPath);
+            if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                QTextStream out(&file);
+                out << sshPubKey;
+                file.close();
+                ui->textEditKeyLog->append(QString("🔑 OpenSSH 公鑰已儲存：%1").arg(sshPubPath));
+                ui->textEditKeyLog->append("📄 OpenSSH 公鑰內容如下：");
+                ui->textEditKeyLog->append("----------- BEGIN SSH PUB KEY -----------");
+                ui->textEditKeyLog->append(sshPubKey);
+                ui->textEditKeyLog->append("------------ END SSH PUB KEY ------------");
+            } else {
+                ui->textEditKeyLog->append("❌ 無法寫入 OpenSSH 公鑰檔案！");
+            }
+        } else {
+            ui->textEditKeyLog->append("❌ 公鑰轉換失敗！");
+        }
+    } else {
+        ui->textEditKeyLog->append("❌ 金鑰產生失敗！");
+    }
+}
+
+void MainWindow::copyOpenSSHPublicKeyToClipboard() {
+    QString pubKey = ui->textEditOpenSSHPublicKey->toPlainText();
+    if (pubKey.isEmpty()) {
+        QMessageBox::warning(this, tr("錯誤"), tr("沒有可複製的 OpenSSH 公鑰。"));
+        return;
+    }
+
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(pubKey);
+    QMessageBox::information(this, tr("成功"), tr("OpenSSH 公鑰已複製到剪貼簿。"));
 }
 
 void MainWindow::on_actionExit_triggered() {
