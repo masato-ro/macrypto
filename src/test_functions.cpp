@@ -1,12 +1,12 @@
-#include <QtTest>
-#include <QFile> // 新增，用於檔案操作
-#include <QDir> // 新增，用於檔案和目錄操作
-#include <QCoreApplication> // 新增，用於處理事件以便進度條更新
-#include <QDebug>
-#include <functional> // 新增，用於 std::function
-#include <QStandardPaths> // 新增，用於獲取臨時檔案路徑
-#include <QProcess>
-#include <QCryptographicHash> // 新增，用於加密雜湊計算
+#include <QtTest>               // Qt 測試框架
+#include <QFile>                // 新增，用於檔案操作
+#include <QDir>                 // 新增，用於檔案和目錄操作
+#include <QCoreApplication>     // 新增，用於處理事件以便進度條更新
+#include <QDebug>               // 新增，用於除錯輸出
+#include <functional>           // 新增，用於 std::function
+#include <QStandardPaths>       // 新增，用於獲取臨時檔案路徑
+#include <QProcess>             // 新增，用於執行外部命令（如 OpenSSL）
+#include <QCryptographicHash>   // 新增，用於加密雜湊計算
 
 #include "hashutil.h"
 #include "hashcontroller.h"
@@ -268,7 +268,6 @@ private slots:
                 QCoreApplication::processEvents();
             };
 
-            // 使用正確初始化的 AES 測試檔案路徑
             bool decryptResult = aesCrypt.decryptFile(m_aesTestFileEncPath, m_aesTestFileDecPath, password, decryptProgressCb);
 
             QCOMPARE(decryptResult, expectDecryptSuccess);
@@ -293,8 +292,8 @@ private slots:
         // 4. 解密測試 (使用錯誤密碼)
         if (expectEncryptSuccess && expectWrongPasswordFail && !wrongPassword.isEmpty()) {
             QFile::remove(m_aesTestFileDecPath); // 清理上次的解密結果
-            // 使用正確初始化的 AES 測試檔案路徑
             bool wrongPassDecryptResult = aesCrypt.decryptFile(m_aesTestFileEncPath, m_aesTestFileDecPath, wrongPassword);
+
             QVERIFY(!wrongPassDecryptResult); // 應該會失敗
         }
 
@@ -452,7 +451,50 @@ private slots:
         if (pkey) { // 釋放金鑰資源
             EVP_PKEY_free(pkey);
         }
-    }   
+    }
+
+    // 測試 CLI 加密和解密功能
+    void testMacryptCliEncryptionDecryption()
+    {
+        QString inputText = "Hello CLI!";
+        QString password = "cli123";
+        QString inputPath = "cli_input.txt";
+        QString encryptedPath = "cli_encrypted.bin";
+        QString decryptedPath = "cli_decrypted.txt";
+
+        // 建立測試輸入檔案
+        QFile file(inputPath);
+        QVERIFY2(file.open(QIODevice::WriteOnly | QIODevice::Truncate),
+                "無法建立 CLI 測試的輸入檔案");
+        file.write(inputText.toUtf8());
+        file.close();
+
+        // === 執行加密 ===
+        QProcess encryptProcess;
+        encryptProcess.start("./macrypt_cli.exe", { "encrypt", inputPath, encryptedPath, password });
+        QVERIFY2(encryptProcess.waitForFinished(5000), "加密 CLI 過程逾時");
+        QCOMPARE(encryptProcess.exitCode(), 0);
+        QVERIFY2(QFile::exists(encryptedPath), "加密後檔案不存在");
+
+        // === 執行解密 ===
+        QProcess decryptProcess;
+        decryptProcess.start("./macrypt_cli.exe", { "decrypt", encryptedPath, decryptedPath, password });
+        QVERIFY2(decryptProcess.waitForFinished(5000), "解密 CLI 過程逾時");
+        QCOMPARE(decryptProcess.exitCode(), 0);
+        QVERIFY2(QFile::exists(decryptedPath), "解密後檔案不存在");
+
+        // === 驗證內容 ===
+        QFile resultFile(decryptedPath);
+        QVERIFY2(resultFile.open(QIODevice::ReadOnly), "無法讀取解密後的檔案");
+        QByteArray resultContent = resultFile.readAll();
+        resultFile.close();
+        QCOMPARE(QString(resultContent), inputText);
+
+        // === 清理檔案 ===
+        QFile::remove(inputPath);
+        QFile::remove(encryptedPath);
+        QFile::remove(decryptedPath);
+    }
 
     void cleanupTestCase() {
         // 這裡可以做一些清理工作，例如確保所有臨時檔案都已被移除

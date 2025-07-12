@@ -1,8 +1,7 @@
 # 忽略 build 目錄
-build/
-out/
-test/
-old/
+build
+out
+test
 .vscode
 .release
 *.o

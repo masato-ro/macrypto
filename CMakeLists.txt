@@ -17,7 +17,7 @@ link_directories("C:/OpenSSL-MSVC/lib")
 
 # 加入你的程式碼
 add_executable(macrypt_gui WIN32
-    src/main.cpp
+    src/main_gui.cpp
     src/mainwindow.cpp
     src/aescontroller.cpp
     src/aescrypt.cpp
@@ -26,21 +26,21 @@ add_executable(macrypt_gui WIN32
     src/keycontroller.cpp
     src/keygen.cpp
     src/gpgcontroller.cpp
+    src/cli_handler.cpp
 
     include/mainwindow.h
     include/aescrypt.h
     include/keygen.h
     include/hashutil.h
     include/gpgcontroller.h
+    include/cli_handler.h
 
     src/mainwindow.ui
     resources.qrc
 )
 
-# 設定 include 目錄
 target_include_directories(macrypt_gui PRIVATE include)
 
-# 加入 OpenSSL
 target_link_libraries(macrypt_gui PRIVATE
     Qt6::Core Qt6::Gui Qt6::Widgets
     libssl libcrypto
@@ -51,10 +51,31 @@ if (WIN32)
     target_sources(macrypt_gui PRIVATE app.rc)
 endif()
 
-# 設定編譯選項
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-Wall -Wextra -Wpedantic -Wdeprecated-declarations)
-endif()
+# CLI target
+add_executable(macrypt_cli
+    src/main_cli.cpp
+    src/cli_handler.cpp
+    src/aescrypt.cpp
+    src/aescontroller.cpp
+    src/hashutil.cpp
+    src/hashcontroller.cpp
+    src/keygen.cpp
+    src/keycontroller.cpp
+    src/gpgcontroller.cpp
+
+    include/aescrypt.h
+    include/keygen.h
+    include/hashutil.h
+    include/gpgcontroller.h
+    include/cli_handler.h
+)
+
+target_include_directories(macrypt_cli PRIVATE include)
+
+target_link_libraries(macrypt_cli PRIVATE
+    Qt6::Core
+    libssl libcrypto
+)
 
 ## 測試配置
 # 為測試檔案創建一個獨立的可執行檔
@@ -65,10 +86,12 @@ add_executable(macrypt_gui_test
     src/aescrypt.cpp
     src/keygen.cpp
     src/gpgcontroller.cpp
+    src/cli_handler.cpp
 
     include/aescrypt.h
     include/keygen.h
     include/gpgcontroller.h
+    include/cli_handler.h
 )
 
 # 設定測試可執行檔的 include 目錄
@@ -90,3 +113,8 @@ target_link_libraries(macrypt_gui_test PRIVATE
 # 啟用 CTest，並添加測試案例
 enable_testing()
 add_test(NAME HashControllerTest COMMAND macrypt_gui_test)
+
+# 設定編譯選項
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-Wall -Wextra -Wpedantic -Wdeprecated-declarations)
+endif()
